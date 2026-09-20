@@ -196,7 +196,6 @@ The Cedar evaluator runs in Python (`backend/src/cedar/`) — no Cedar binary or
 
 ## AI Tools Used
 
-<TODO: list specific AI tools your team used during development — e.g. Claude Code, GitHub Copilot, ChatGPT — and what you used each one for>
 
 ---
 
