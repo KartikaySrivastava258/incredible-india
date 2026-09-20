@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kalaa Setu — canonical data models",
+  "description": "Machine-readable mirror of BRAIN.md Section F. Field names are snake_case. All timestamps are ISO-8601 strings. All *_id fields are UUID v4 strings unless noted.",
+  "version": "1.0.0",
+  "enums": {
+    "Category": ["food", "textile", "toy", "handicraft"],
+    "TouchpointType": ["school", "csc"],
+    "ReviewStatus": ["pending", "approved", "rejected"],
+    "ReviewDecision": ["approved", "rejected", "flagged"]
+  },
+  "models": {
+    "Seller": {
+      "primary_key": "seller_id",
+      "required": ["seller_id", "name", "village", "state", "seller_language", "touchpoint_id", "created_at"],
+      "properties": {
+        "seller_id":       { "type": "string", "format": "uuid" },
+        "name":            { "type": "string" },
+        "village":         { "type": "string" },
+        "state":           { "type": "string" },
+        "seller_language": { "type": "string", "description": "ISO 639-1, e.g. 'hi'" },
+        "phone":           { "type": "string" },
+        "touchpoint_id":   { "type": "string", "format": "uuid", "fk": "CommunityTouchpoint.touchpoint_id" },
+        "created_at":      { "type": "string", "format": "date-time" }
+      }
+    },
+    "CommunityTouchpoint": {
+      "primary_key": "touchpoint_id",
+      "required": ["touchpoint_id", "name", "type", "village", "state", "pickup_address"],
+      "properties": {
+        "touchpoint_id":  { "type": "string", "format": "uuid" },
+        "name":           { "type": "string" },
+        "type":           { "type": "string", "enum": ["school", "csc"] },
+        "village":        { "type": "string" },
+        "state":          { "type": "string" },
+        "pickup_address": { "type": "string" },
+        "admin_user_id":  { "type": "string" }
+      }
+    },
+    "Product": {
+      "primary_key": "product_id",
+      "required": ["product_id", "seller_id", "category", "raw_description", "seller_language", "created_at"],
+      "properties": {
+        "product_id":      { "type": "string", "format": "uuid" },
+        "seller_id":       { "type": "string", "format": "uuid", "fk": "Seller.seller_id" },
+        "category":        { "type": "string", "enum": ["food", "textile", "toy", "handicraft"] },
+        "raw_description": { "type": "string" },
+        "seller_language": { "type": "string" },
+        "created_at":      { "type": "string", "format": "date-time" }
+      }
+    },
+    "Listing": {
+      "primary_key": "listing_id",
+      "required": ["listing_id", "product_id", "category", "listing_title", "description_en", "price_suggestion", "compliance_flags", "review_status", "created_at"],
+      "properties": {
+        "listing_id":        { "type": "string", "format": "uuid" },
+        "product_id":        { "type": "string", "format": "uuid", "fk": "Product.product_id" },
+        "category":          { "type": "string", "enum": ["food", "textile", "toy", "handicraft"] },
+        "listing_title":     { "type": "string" },
+        "description_en":    { "type": "string" },
+        "description_local": { "type": "string" },
+        "price_suggestion":  { "type": "number", "minimum": 0 },
+        "photo_guidance":    { "type": "array", "items": { "type": "string" } },
+        "story":             { "type": "string" },
+        "compliance_flags":  { "type": "array", "items": { "type": "string" } },
+        "review_status":     { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "created_at":        { "type": "string", "format": "date-time" }
+      }
+    },
+    "Buyer": {
+      "primary_key": "buyer_id",
+      "required": ["buyer_id"],
+      "properties": {
+        "buyer_id":       { "type": "string", "format": "uuid" },
+        "buyer_language": { "type": "string", "default": "en" }
+      }
+    },
+    "SearchIntent": {
+      "primary_key": "intent_id",
+      "required": ["intent_id", "query_text", "created_at"],
+      "properties": {
+        "intent_id":  { "type": "string", "format": "uuid" },
+        "query_text": { "type": "string" },
+        "buyer_id":   { "type": "string", "format": "uuid", "fk": "Buyer.buyer_id" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Contribution": {
+      "primary_key": "contribution_id",
+      "required": ["contribution_id", "seller_id", "opted_in", "percentage", "touchpoint_id", "updated_at"],
+      "properties": {
+        "contribution_id": { "type": "string", "format": "uuid" },
+        "seller_id":       { "type": "string", "format": "uuid", "fk": "Seller.seller_id" },
+        "opted_in":        { "type": "boolean" },
+        "percentage":      { "type": "number", "minimum": 0, "maximum": 100 },
+        "touchpoint_id":   { "type": "string", "format": "uuid", "fk": "CommunityTouchpoint.touchpoint_id" },
+        "updated_at":      { "type": "string", "format": "date-time" }
+      }
+    },
+    "LedgerEntry": {
+      "primary_key": "ledger_entry_id",
+      "required": ["ledger_entry_id", "sale_id", "seller_id", "listing_id", "sale_amount", "platform_fee", "seller_net", "contribution_amount", "touchpoint_id", "buyer_visible", "created_at"],
+      "properties": {
+        "ledger_entry_id":     { "type": "string", "format": "uuid" },
+        "sale_id":             { "type": "string", "format": "uuid" },
+        "seller_id":           { "type": "string", "format": "uuid", "fk": "Seller.seller_id" },
+        "listing_id":          { "type": "string", "format": "uuid", "fk": "Listing.listing_id" },
+        "sale_amount":         { "type": "number", "minimum": 0 },
+        "platform_fee":        { "type": "number", "minimum": 0 },
+        "seller_net":          { "type": "number", "minimum": 0 },
+        "contribution_amount": { "type": "number", "minimum": 0, "description": "MUST be 0 if Contribution.opted_in is false — Cedar-enforced" },
+        "touchpoint_id":       { "type": "string", "format": "uuid", "fk": "CommunityTouchpoint.touchpoint_id" },
+        "buyer_visible":       { "type": "boolean" },
+        "created_at":          { "type": "string", "format": "date-time" }
+      }
+    },
+    "Review": {
+      "primary_key": "review_id",
+      "required": ["review_id", "listing_id", "reviewer", "decision", "created_at"],
+      "properties": {
+        "review_id":  { "type": "string", "format": "uuid" },
+        "listing_id": { "type": "string", "format": "uuid", "fk": "Listing.listing_id" },
+        "reviewer":   { "type": "string", "description": "'auto' or a reviewer id" },
+        "decision":   { "type": "string", "enum": ["approved", "rejected", "flagged"] },
+        "notes":      { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "dynamodb_tables": {
+    "Sellers":              { "partition_key": "seller_id" },
+    "CommunityTouchpoints": { "partition_key": "touchpoint_id" },
+    "Products":             { "partition_key": "product_id" },
+    "Listings":             { "partition_key": "listing_id" },
+    "Buyers":               { "partition_key": "buyer_id" },
+    "SearchIntents":        { "partition_key": "intent_id" },
+    "Contributions":        { "partition_key": "contribution_id" },
+    "LedgerEntries":        { "partition_key": "ledger_entry_id" },
+    "Reviews":              { "partition_key": "review_id" }
+  }
+}
