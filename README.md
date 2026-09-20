@@ -234,3 +234,8 @@ MIT — see [LICENSE](./LICENSE).
 - [Ollama](https://ollama.com) — local LLM runtime
 - [sentence-transformers](https://www.sbert.net) — `all-MiniLM-L6-v2` embedding model
 - [React](https://react.dev), [Vite](https://vitejs.dev), [AWS SAM CLI](https://aws.amazon.com/serverless/sam/)
+
+
+### Reset the local demo
+
+With LocalStack and the matching service running, run `bash scripts/demo-reset.sh`. The script is guarded to refuse non-local DynamoDB endpoints, clears/reseeds DynamoDB and the matching index, and reminds you that AI conversations are in memory and are cleared by restarting the AI service.

@@ -53,6 +53,11 @@ logging.basicConfig(level=logging.INFO, format="[backend] %(levelname)s %(messag
 log = logging.getLogger("kalaa.app")
 
 # Import handlers after env is loaded.
+from cedar.evaluator import load_policies  # noqa: E402
+
+# Load Cedar policies once when the local backend starts.
+load_policies(os.path.join(_here, "..", "..", "policies"))
+
 from handlers import (  # noqa: E402
     contributions as h_contributions,
     impact as h_impact,
@@ -109,9 +114,14 @@ def _match_route(method: str, path: str):
 class Handler(BaseHTTPRequestHandler):
     def _respond(self, result: dict) -> None:
         self.send_response(result.get("statusCode", 200))
-        for k, v in (result.get("headers") or {}).items():
+        headers = dict(result.get("headers") or {})
+        headers.setdefault("Access-Control-Allow-Origin", "http://localhost:5173")
+        headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+        headers.setdefault("Access-Control-Allow-Headers", "Content-Type, X-Principal-Type, X-Principal-Seller-Id, X-Principal-Touchpoint-Id")
+        headers.setdefault("Access-Control-Max-Age", "86400")
+        for k, v in headers.items():
             self.send_header(k, v)
-        if not (result.get("headers") or {}).get("Content-Type"):
+        if not headers.get("Content-Type"):
             self.send_header("Content-Type", "application/json")
         self.end_headers()
         body = result.get("body", "")
@@ -149,6 +159,9 @@ class Handler(BaseHTTPRequestHandler):
         }
         result = handler(event, None)
         self._respond(result)
+
+    def do_OPTIONS(self):
+        self._respond({"statusCode": 204, "headers": {}})
 
     def do_GET(self):    self._handle("GET")
     def do_POST(self):   self._handle("POST")

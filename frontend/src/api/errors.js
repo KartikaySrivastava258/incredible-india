@@ -11,12 +11,13 @@
  * for any of these — see SALONI_BATRA_TASK.md Section 5.1 / 5.2 / 12.
  */
 export class ApiError extends Error {
-  constructor({ status, code, message, isNetworkError = false }) {
+  constructor({ status, code, message, details = null, isNetworkError = false }) {
     super(message || 'Request failed');
     this.name = 'ApiError';
     this.status = status ?? null;
     this.code = code || (isNetworkError ? 'NETWORK_ERROR' : 'UNKNOWN_ERROR');
     this.isNetworkError = isNetworkError;
+    this.details = details || null;
   }
 
   get isUpstreamUnavailable() {
@@ -44,7 +45,9 @@ export class ApiError extends Error {
       case 502:
         return 'AI is temporarily unavailable, please retry.';
       case 403:
-        return "You don't have permission to do that.";
+        return this.message?.startsWith('Cedar denied:')
+          ? this.message
+          : "You don't have permission to do that.";
       case 404:
         return "We couldn't find what you were looking for.";
       case 400:

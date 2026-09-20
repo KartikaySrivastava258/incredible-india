@@ -20,10 +20,10 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 SEED_PATH = Path(__file__).resolve().parent.parent / "data" / "seed" / "opensearch_seed.json"
-MATCHING_SERVICE_URL = os.getenv("MATCHING_SERVICE_URL")
+MATCHING_SERVICE_URL = os.getenv("MATCHING_SERVICE_URL", "http://localhost:8002")
 
 
 def load_seed_data() -> dict:

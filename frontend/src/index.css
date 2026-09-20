@@ -537,6 +537,24 @@ select {
   }
 }
 
+.listing-qr {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0.5rem 0 1.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.listing-qr svg {
+  display: block;
+  width: 180px;
+  height: 180px;
+}
+
 .chat-window__composer {
   display: flex;
   gap: 0.6rem;
@@ -2879,5 +2897,78 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .app-background-gallery.infinite-gallery { cursor: default; }
+}
+
+
+.chat-window__voice-btn { white-space: nowrap; }
+.chat-window__speech-hint { min-height: 1.25rem; margin-top: .35rem; font-size: .78rem; color: var(--muted, #666); }
+
+/* ============================================================
+   KALAA SETU DEMO — SEARCH RESULTS VISIBILITY FIX
+   ============================================================ */
+
+.results-grid {
+  position: relative !important;
+  z-index: 50 !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 20px !important;
+  margin-top: 24px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+}
+
+.result-card {
+  position: relative !important;
+  z-index: 51 !important;
+  display: block !important;
+  min-height: 150px !important;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  color: #2c1a0e !important;
+  border: 1px solid #e4d5c5 !important;
+  box-shadow: 0 8px 24px rgba(44, 26, 14, 0.12) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  text-decoration: none !important;
+  transform: none !important;
+}
+
+.result-card:hover {
+  transform: translateY(-3px) !important;
+}
+
+.result-card__thumb {
+  display: block !important;
+  min-height: 70px !important;
+  margin-bottom: 14px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #f3e5d0, #ead2b5) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.result-card__body {
+  position: relative !important;
+  z-index: 52 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+}
+
+.result-card__body h3 {
+  margin: 0 0 8px !important;
+  color: #2c1a0e !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.result-card .hint {
+  color: #6b5848 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 

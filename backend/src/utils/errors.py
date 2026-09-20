@@ -19,11 +19,14 @@ import json
 from typing import Any
 
 
-def _response(status_code: int, code: str, message: str) -> dict:
+def _response(status_code: int, code: str, message: str, details: dict | None = None) -> dict:
+    error = {"code": code, "message": message}
+    if details is not None:
+        error["details"] = details
     return {
         "statusCode": status_code,
         "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({"error": {"code": code, "message": message}}),
+        "body": json.dumps({"error": error}),
     }
 
 
@@ -40,8 +43,8 @@ def bad_request(message: str) -> dict:
     return _response(400, "BAD_REQUEST", message)
 
 
-def forbidden(message: str) -> dict:
-    return _response(403, "FORBIDDEN", message)
+def forbidden(message: str, details: dict | None = None) -> dict:
+    return _response(403, "FORBIDDEN", message, details)
 
 
 def not_found(message: str) -> dict:

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from cedar.evaluator import Request, is_authorized
+from cedar.evaluator import Request, authorize
 from db import dynamodb
 from utils.errors import (
     bad_request,
@@ -82,12 +82,21 @@ def lambda_handler(event, context):
     else:
         return bad_request(f"unsupported X-Principal-Type '{principal_type}'")
 
-    if not is_authorized(cedar_request):
+    decision = authorize(cedar_request)
+    if not decision.allowed:
         log.warning(
             "Cedar denied ledger read: principal_type=%s seller_id=%s",
             principal_type, seller_id,
         )
-        return forbidden("Cedar denied: you cannot view this seller's ledger")
+        details = None
+        if principal_type == "TouchpointAdmin":
+            details = {
+                "policy": "touchpoint_admin_scope.cedar",
+                "action": cedar_request.action,
+                "principal_touchpoint_id": cedar_request.principal_attrs.get("touchpoint_id"),
+                "resource_touchpoint_id": cedar_request.resource_attrs.get("touchpoint_id"),
+            }
+        return forbidden("Cedar denied: you cannot view this seller's ledger", details)
 
     try:
         entries = dynamodb.scan_filter(dynamodb.TABLE_LEDGER, "seller_id", seller_id)

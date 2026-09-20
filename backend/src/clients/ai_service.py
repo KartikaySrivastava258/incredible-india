@@ -33,7 +33,7 @@ class AIServiceError(Exception):
 
 class BaseAIClient:
     def health(self) -> bool: ...
-    def converse(self, seller_id: str, conversation_id: str | None, message_text: str) -> dict: ...
+    def converse(self, seller_id: str, conversation_id: str | None, message_text: str, seller_language: str = "hi") -> dict: ...
     def generate_listing(self, seller_id: str, conversation_id: str) -> dict: ...
     def noble_cause_note(self, listing_id: str, seller_id: str) -> str: ...
 
@@ -67,13 +67,14 @@ class HttpAIClient(BaseAIClient):
         except requests.RequestException:
             return False
 
-    def converse(self, seller_id: str, conversation_id: str | None, message_text: str) -> dict:
+    def converse(self, seller_id: str, conversation_id: str | None, message_text: str, seller_language: str = "hi") -> dict:
         body = self._post(
             "/agent/converse",
             {
                 "seller_id": seller_id,
                 "conversation_id": conversation_id,
                 "message_text": message_text,
+                "seller_language": seller_language,
             },
         )
         _validate_converse(body)
@@ -112,7 +113,7 @@ class MockAIClient(BaseAIClient):
     def health(self) -> bool:
         return True
 
-    def converse(self, seller_id: str, conversation_id: str | None, message_text: str) -> dict:
+    def converse(self, seller_id: str, conversation_id: str | None, message_text: str, seller_language: str = "hi") -> dict:
         stage = _guess_stage(message_text)
         reply = {
             "idea":           "Aap kya banate hain? Apne product ke baare mein bataiye.",

@@ -344,6 +344,29 @@ export class MockApiClient {
     return this.ledgerEntries.filter((e) => e.seller_id === sellerId);
   }
 
+  async getLedgerAsAdmin(sellerId, touchpointId) {
+    await this._delay();
+    if (!sellerId || !touchpointId) {
+      throw new ApiError({ status: 400, code: 'INVALID_FIELDS', message: 'seller_id and touchpoint_id are required.' });
+    }
+    const seller = this.sellers.find((s) => s.seller_id === sellerId);
+    if (!seller) throw new ApiError({ status: 404, code: 'NOT_FOUND', message: 'Seller not found.' });
+    if (seller.touchpoint_id !== touchpointId) {
+      throw new ApiError({
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Cedar denied: you cannot view this seller\'s ledger',
+        details: {
+          policy: 'touchpoint_admin_scope.cedar',
+          action: 'viewLedgerData',
+          principal_touchpoint_id: touchpointId,
+          resource_touchpoint_id: seller.touchpoint_id
+        }
+      });
+    }
+    return this.ledgerEntries.filter((e) => e.seller_id === sellerId);
+  }
+
   async getImpact(options = {}) {
     await this._delay();
     const { principalTouchpointId } = options;

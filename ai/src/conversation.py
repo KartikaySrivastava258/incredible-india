@@ -1,16 +1,46 @@
 """Conversation state management and orchestration using Strands Agents SDK."""
+import logging
+import re
 import uuid
 from typing import Dict, Any, Optional, List, Tuple
 from .llm_client import LLMClient
 from .config import (
     CATEGORY_GUIDANCE,
-    STAGE_DESCRIPTIONS,
-    STAGE_SYSTEM_PROMPTS,
     CATEGORY_DETECTION_SYSTEM_PROMPT,
-    CAPTURE_ANSWER_CHECK_SYSTEM_PROMPT,
     CAPTURE_MAX_TURNS,
-    INTEREST_KEYWORDS_LOWER,
+    get_language_name,
+    build_stage_system_prompt,
+    build_capture_check_system_prompt,
+    get_category_questions,
+    get_fallback_message,
+    get_interest_keywords,
+    get_stage_description,
 )
+
+logger = logging.getLogger(__name__)
+
+# English category keywords that need word boundaries (a bare substring test would match
+# "dollars" for "doll", or the name "Sarita" for "sari"). The original substring lists in
+# _detect_category_keywords are left untouched so Hindi/mixed behaviour is unchanged; these only
+# ADD matches for English (and romanised) wording.
+_EN_CATEGORY_PATTERNS = {
+    "food": re.compile(
+        r"\b(?:pickles?|chutneys?|papad|papads|spices?|jaggery|namkeen|mithai|masala|ghee|"
+        r"cakes?|biscuits?|cookies?|jams?)\b"
+    ),
+    "textile": re.compile(
+        r"\b(?:sarees?|saris?|dupattas?|kurtas?|shawls?|scarf|scarves|handloom|weaving|weaver|"
+        r"weavers|woven|weave|embroidery|embroidered|garments?|clothes|clothing|cloths?|"
+        r"fabrics?|textiles?)\b"
+    ),
+    "toy": re.compile(
+        r"\b(?:toys?|dolls?|puzzles?|puppets?|playthings?|rattles?)\b"
+    ),
+    "handicraft": re.compile(
+        r"\b(?:handmade|hand[- ]made|hand[- ]crafted|handicrafts?|crafts?|pottery|carvings?|"
+        r"woodwork|woodcraft|baskets?|basketry|bamboo|terracotta|clay)\b"
+    ),
+}
 
 
 class ConversationState:
@@ -83,6 +113,20 @@ class ConversationAgent:
         self.llm = llm_client
         self.conversations: Dict[str, ConversationState] = {}
 
+    def _generate_json_safe(self, prompt: str, system: str) -> Dict[str, Any]:
+        """Call the LLM for JSON, turning a transport failure into an "unusable result".
+
+        LLMClient.generate() raises RuntimeError when Ollama is unreachable or returns an HTTP
+        error (e.g. 404 for a model that isn't pulled). Left alone, that surfaces as a 500 from
+        /agent/converse. Returning {"error": ...} instead sends every caller down its existing
+        keyword/scripted fallback, which already treats an "error" dict as unusable.
+        """
+        try:
+            return self.llm.generate_json(prompt, system=system)
+        except RuntimeError as exc:
+            logger.warning("LLM call failed, using fallback path: %s", exc)
+            return {"error": "llm_unavailable", "detail": str(exc)}
+
     def process_message(
         self,
         seller_id: str,
@@ -107,7 +151,7 @@ class ConversationAgent:
         elif state.stage == "capture":
             response = self._handle_capture_stage(state, message_text, seller_language)
         else:
-            response = "धन्यवाद! आपकी जानकारी पूरी हो गई है।"
+            response = get_fallback_message("done", seller_language)
 
         # Add AI response to history
         state.add_message("assistant", response)
@@ -136,12 +180,15 @@ class ConversationAgent:
         """
         turns = state.turns_in_current_stage()
 
-        prompt = self._build_narrative_prompt(state, stage, message)
-        result = self.llm.generate_json(prompt, system=STAGE_SYSTEM_PROMPTS[stage])
+        prompt = self._build_narrative_prompt(state, stage, message, lang)
+        # The system prompt is built per request (not at import time) because the seller's
+        # language is only known once the request arrives.
+        system_prompt = build_stage_system_prompt(stage, lang)
+        result = self._generate_json_safe(prompt, system_prompt)
         reply_text, ready_to_advance, used_fallback = self._parse_narrative_result(result)
 
         if used_fallback:
-            reply_text, ready_to_advance = self._fallback_narrative_response(stage, message, turns)
+            reply_text, ready_to_advance = self._fallback_narrative_response(stage, message, turns, lang)
 
         # Never advance on the very first turn of a stage - always deliver the stage's own
         # explanation before deciding the seller is ready to move on.
@@ -157,8 +204,11 @@ class ConversationAgent:
 
         return reply_text
 
-    def _build_narrative_prompt(self, state: ConversationState, stage: str, message: str) -> str:
-        """Build the user-turn prompt for a narrative-stage LLM call."""
+    def _build_narrative_prompt(
+        self, state: ConversationState, stage: str, message: str, lang: str = "hi"
+    ) -> str:
+        """Build the user-turn prompt for a narrative-stage LLM call, replying in `lang`."""
+        language_name = get_language_name(lang)
         history_text = self._format_history(state)
         turn_number = state.turns_in_current_stage()
         return (
@@ -166,7 +216,7 @@ class ConversationAgent:
             f"This is turn {turn_number} of the '{stage}' stage.\n"
             f"Seller's latest message: {message}\n\n"
             "Respond with a JSON object with exactly these fields:\n"
-            "- reply_text: your reply to the seller, in Hindi (Devanagari script)\n"
+            f"- reply_text: your reply to the seller, in {language_name}\n"
             "- ready_to_advance: true only if the seller has now engaged enough that it is "
             "time to move on to the next topic, false otherwise\n\n"
             "Respond with ONLY the JSON object, no other text."
@@ -202,7 +252,7 @@ class ConversationAgent:
         return reply_text, ready_to_advance, False
 
     def _fallback_narrative_response(
-        self, stage: str, message: str, turns: int
+        self, stage: str, message: str, turns: int, lang: str = "hi"
     ) -> Tuple[str, bool]:
         """Keyword-based safety net, used only when the LLM call/JSON parsing fails twice.
 
@@ -210,27 +260,24 @@ class ConversationAgent:
         stall just because Ollama is briefly unavailable.
         """
         if turns <= 1:
-            return STAGE_DESCRIPTIONS[stage], False
+            return get_stage_description(stage, lang), False
 
         if stage == "idea":
             message_lower = message.lower()
             # An explicit interest keyword always counts as ready, even if short.
-            if any(kw in message_lower for kw in INTEREST_KEYWORDS_LOWER):
-                return STAGE_DESCRIPTIONS["procedure"], True
+            if any(kw in message_lower for kw in get_interest_keywords(lang)):
+                return get_stage_description("procedure", lang), True
             # Otherwise, very short/off-topic answers get gently re-asked rather than advancing.
             if len(message.strip()) < 5:
-                return (
-                    "कृपया बताइए - क्या आप अपने उत्पाद को इस बाज़ार में बेचना चाहेंगे?",
-                    False,
-                )
-            return STAGE_DESCRIPTIONS["procedure"], True
+                return get_fallback_message("idea_reask", lang), False
+            return get_stage_description("procedure", lang), True
 
         if stage == "procedure":
-            return STAGE_DESCRIPTIONS["business_model"], True
+            return get_stage_description("business_model", lang), True
 
         # business_model: the reply text here is only used if we somehow don't end up
         # entering capture (defensive); the real capture-entry reply is built separately.
-        return STAGE_DESCRIPTIONS[stage], True
+        return get_stage_description(stage, lang), True
 
     # ------------------------------------------------------------------
     # capture: category detection + adaptive per-category questioning
@@ -242,10 +289,11 @@ class ConversationAgent:
         if category:
             state.draft_state["category"] = category
             state.draft_state["raw_description"] = message
-            return self._get_category_question(state, category)
+            return self._get_category_question(state, category, lang)
         return (
-            STAGE_DESCRIPTIONS["capture"]
-            + " पहले बताइए - यह किस तरह का उत्पाद है? (खाना, कपड़ा, खिलौना, या हस्तशिल्प?)"
+            get_stage_description("capture", lang)
+            + " "
+            + get_fallback_message("ask_category_suffix", lang)
         )
 
     def _handle_capture_stage(self, state: ConversationState, message: str, lang: str) -> str:
@@ -256,23 +304,23 @@ class ConversationAgent:
             if category:
                 state.draft_state["category"] = category
                 state.draft_state["raw_description"] = message
-                return self._get_category_question(state, category)
-            return "मुझे समझ नहीं आया। कृपया बताइए - यह खाना है, कपड़ा है, खिलौना है, या हस्तशिल्प?"
+                return self._get_category_question(state, category, lang)
+            return get_fallback_message("category_not_understood", lang)
 
         # Hard cap: if the seller never gives enough info, move on with what we have rather
         # than looping forever (KARTIKAY_TASK.md Section 5.1).
         if state.turns_in_current_stage() > CAPTURE_MAX_TURNS:
             state.draft_state["seller_responses"].append(message)
             state.advance_stage()
-            return "बहुत अच्छा! जितनी जानकारी मिली उसके आधार पर हम आपके लिए एक listing तैयार करेंगे।"
+            return get_fallback_message("capture_max_turns", lang)
 
         # Check whether the seller's answer actually addressed the last question asked.
         questions_asked = state.draft_state["questions_asked"]
         if questions_asked:
             last_question = questions_asked[-1]
-            addressed, follow_up = self._check_answer_addressed(last_question, message)
+            addressed, follow_up = self._check_answer_addressed(last_question, message, lang)
             if not addressed:
-                return follow_up or f"धन्यवाद, लेकिन कृपया थोड़ा और स्पष्ट बताएं - {last_question}"
+                return follow_up or (get_fallback_message("clarify_prefix", lang) + last_question)
 
         # Store response
         state.draft_state["seller_responses"].append(message)
@@ -280,27 +328,31 @@ class ConversationAgent:
         # Check if we have enough info (at least 3 responses) to complete
         if len(state.draft_state["seller_responses"]) >= 3:
             state.advance_stage()
-            return "बहुत अच्छा! मैंने सारी जानकारी इकट्ठा कर ली है। अब हम आपके लिए एक listing तैयार करेंगे।"
+            return get_fallback_message("capture_complete", lang)
 
         # Get next question for this category. The required-info checklist per category
         # (CATEGORY_GUIDANCE[category]["questions"]) stays the source of truth for *what* must
         # be asked, so listing_generator._check_compliance keeps working unchanged.
         category = state.draft_state["category"]
-        guidance = CATEGORY_GUIDANCE[category]
+        # Every language list has the same length, so the index stays valid even if the seller's
+        # language changes mid-conversation.
+        questions = get_category_questions(category, lang)
         questions_asked_count = len(questions_asked)
 
-        if questions_asked_count < len(guidance["questions"]):
-            question = guidance["questions"][questions_asked_count]
+        if questions_asked_count < len(questions):
+            question = questions[questions_asked_count]
             state.draft_state["questions_asked"].append(question)
             return question
 
         # Ask for more general details
-        return "कुछ और बताइए - कोई खास बात इस उत्पाद के बारे में?"
+        return get_fallback_message("ask_more", lang)
 
-    def _check_answer_addressed(self, question: str, answer: str) -> Tuple[bool, Optional[str]]:
+    def _check_answer_addressed(
+        self, question: str, answer: str, lang: str = "hi"
+    ) -> Tuple[bool, Optional[str]]:
         """LLM-based check of whether `answer` addresses `question`, with a light fallback."""
         prompt = f"Question asked: {question}\nSeller's answer: {answer}"
-        result = self.llm.generate_json(prompt, system=CAPTURE_ANSWER_CHECK_SYSTEM_PROMPT)
+        result = self._generate_json_safe(prompt, build_capture_check_system_prompt(lang))
 
         if isinstance(result, dict) and "error" not in result and isinstance(result.get("addressed"), bool):
             addressed = result["addressed"]
@@ -321,7 +373,7 @@ class ConversationAgent:
         list can decide, so the caller asks a clarifying question instead.
         """
         prompt = f"Seller's message: {message}"
-        result = self.llm.generate_json(prompt, system=CATEGORY_DETECTION_SYSTEM_PROMPT)
+        result = self._generate_json_safe(prompt, CATEGORY_DETECTION_SYSTEM_PROMPT)
 
         if isinstance(result, dict) and "error" not in result:
             candidate = result.get("category")
@@ -340,29 +392,28 @@ class ConversationAgent:
         message_lower = message.lower()
 
         # Food keywords
-        if any(kw in message_lower for kw in ["खाना", "खाद्य", "मिठाई", "नमकीन", "अचार", "food", "sweet", "snack"]):
+        if any(kw in message_lower for kw in ["खाना", "खाद्य", "मिठाई", "नमकीन", "अचार", "food", "sweet", "snack"]) or _EN_CATEGORY_PATTERNS["food"].search(message_lower):
             return "food"
 
         # Textile keywords
-        if any(kw in message_lower for kw in ["कपड़ा", "साड़ी", "दुपट्टा", "कुर्ता", "textile", "fabric", "cloth", "saree"]):
+        if any(kw in message_lower for kw in ["कपड़ा", "साड़ी", "दुपट्टा", "कुर्ता", "textile", "fabric", "cloth", "saree"]) or _EN_CATEGORY_PATTERNS["textile"].search(message_lower):
             return "textile"
 
         # Toy keywords
-        if any(kw in message_lower for kw in ["खिलौना", "toy", "खेल", "game"]):
+        if any(kw in message_lower for kw in ["खिलौना", "toy", "खेल", "game"]) or _EN_CATEGORY_PATTERNS["toy"].search(message_lower):
             return "toy"
 
         # Handicraft keywords
-        if any(kw in message_lower for kw in ["हस्तशिल्प", "handicraft", "हाथ से बना", "कला", "craft", "दस्तकारी"]):
+        if any(kw in message_lower for kw in ["हस्तशिल्प", "handicraft", "हाथ से बना", "कला", "craft", "दस्तकारी"]) or _EN_CATEGORY_PATTERNS["handicraft"].search(message_lower):
             return "handicraft"
 
         return None
 
-    def _get_category_question(self, state: ConversationState, category: str) -> str:
-        """Get the first category-specific question."""
-        guidance = CATEGORY_GUIDANCE[category]
-        question = guidance["questions"][0]
+    def _get_category_question(self, state: ConversationState, category: str, lang: str = "hi") -> str:
+        """Get the first category-specific question, in the seller's language (hi/en)."""
+        question = get_category_questions(category, lang)[0]
         state.draft_state["questions_asked"].append(question)
-        return f"अच्छा! {question}"
+        return get_fallback_message("first_question_prefix", lang) + question
 
     def get_state(self, conversation_id: str) -> Optional[ConversationState]:
         """Retrieve conversation state."""

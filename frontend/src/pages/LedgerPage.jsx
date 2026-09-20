@@ -18,7 +18,7 @@ export default function LedgerPage() {
     setError(null);
     try {
       const data = await api.getLedger(seller.seller_id);
-      setEntries(data);
+      setEntries(Array.isArray(data) ? data : (data.entries || []));
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError({ message: String(err) }));
     } finally {

@@ -43,7 +43,7 @@ export default function TouchpointAdminView({ touchpointId }) {
   return (
     <div>
       <h2>Touchpoint dashboard</h2>
-      <p className="hint">Scoped to touchpoint {touchpointId} by the backend's Cedar policy.</p>
+      <p className="hint">Impact totals are global aggregates; this endpoint is not currently Cedar-scoped. Use the seller ledger lookup below for a Cedar-enforced check.</p>
       {loading && <LoadingSpinner label="Loading touchpoint data…" />}
       {error && <ErrorState error={error} onRetry={load} />}
       {!loading && !error && <ImpactStats impact={impact} />}

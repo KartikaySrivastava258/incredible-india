@@ -5,7 +5,14 @@ import LoadingSpinner from '../common/LoadingSpinner';
 
 const LANGUAGES = [
   { code: 'hi', label: 'हिन्दी (Hindi)' },
-  { code: 'en', label: 'English' }
+  { code: 'en', label: 'English' },
+  { code: 'ta', label: 'தமிழ் (Tamil)' },
+  { code: 'te', label: 'తెలుగు (Telugu)' },
+  { code: 'bn', label: 'বাংলা (Bengali)' },
+  { code: 'mr', label: 'मराठी (Marathi)' },
+  { code: 'gu', label: 'ગુજરાતી (Gujarati)' },
+  { code: 'kn', label: 'ಕನ್ನಡ (Kannada)' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ (Punjabi)' }
 ];
 
 /**

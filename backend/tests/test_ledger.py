@@ -86,6 +86,12 @@ def test_touchpoint_admin_cannot_read_other_village_ledger(seeded):
     status, body = decode(h_ledger.lambda_handler(event, None))
 
     assert status == 403
+    assert body["error"]["code"] == "FORBIDDEN"
+    assert body["error"]["message"].startswith("Cedar denied:")
+    assert body["error"]["details"]["policy"] == "touchpoint_admin_scope.cedar"
+    assert body["error"]["details"]["action"] == "viewLedgerData"
+    assert body["error"]["details"]["principal_touchpoint_id"] == TP_CSC_ID
+    assert body["error"]["details"]["resource_touchpoint_id"] == TP_SCHOOL_ID
 
 
 def test_unknown_seller_404(seeded):

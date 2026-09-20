@@ -57,7 +57,8 @@ export class ApiClient {
       throw new ApiError({
         status: response.status,
         code: errBody?.code,
-        message: errBody?.message
+        message: errBody?.message,
+        details: errBody?.details
       });
     }
 
@@ -162,13 +163,19 @@ export class ApiClient {
     });
   }
 
+  /** GET /ledger/:seller_id as a touchpoint administrator. */
+  getLedgerAsAdmin(sellerId, touchpointId) {
+    return this._get(`/ledger/${sellerId}`, {
+      'X-Principal-Type': 'TouchpointAdmin',
+      'X-Principal-Touchpoint-Id': touchpointId,
+    });
+  }
+
   /**
    * GET /impact → impact dashboard aggregate.
    * options.principalTouchpointId (optional, STRETCH admin view only):
-   * sent as an X-Principal-Touchpoint-Id header so the backend's Cedar
-   * layer can scope the response to one touchpoint. See
-   * components/admin/TouchpointAdminView.jsx for why this is a header
-   * rather than an invented query param/endpoint.
+   * sent as an X-Principal-Touchpoint-Id header for compatibility with the
+   * admin UI. The current /impact handler does not enforce Cedar scoping.
    */
   getImpact(options = {}) {
     const headers = options.principalTouchpointId

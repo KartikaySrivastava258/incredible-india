@@ -50,6 +50,7 @@ def lambda_handler(event, context):
             seller_id=seller_id,
             conversation_id=conversation_id,
             message_text=message_text,
+            seller_language=seller.get("seller_language", "hi"),
         )
     except ai_service.AIServiceError as exc:
         log.warning("AI service error: %s", exc)

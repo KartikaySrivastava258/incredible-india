@@ -54,7 +54,18 @@ export default function SellerOnboardingPage() {
 
   function handleRegistered(newSeller) {
     setSeller(newSeller);
-    setMessages([{ id: nextId(), from: 'ai', text: `Namaste ${newSeller.name}! Bataiye, aap kya banate hain?` }]);
+    const greetings = {
+      hi: `नमस्ते ${newSeller.name}! बताइए, आप क्या बनाते हैं?`,
+      en: `Hello ${newSeller.name}! Please tell me what you make.`,
+      ta: `வணக்கம் ${newSeller.name}! நீங்கள் என்ன தயாரிக்கிறீர்கள் என்று சொல்லுங்கள்.`,
+      te: `నమస్కారం ${newSeller.name}! మీరు ఏమి తయారు చేస్తారో చెప్పండి.`,
+      bn: `নমস্কার ${newSeller.name}! আপনি কী তৈরি করেন বলুন।`,
+      mr: `नमस्कार ${newSeller.name}! आपण काय बनवता ते सांगा.`,
+      gu: `નમસ્તે ${newSeller.name}! તમે શું બનાવો છો તે જણાવો.`,
+      kn: `ನಮಸ್ಕಾರ ${newSeller.name}! ನೀವು ಏನು ತಯಾರಿಸುತ್ತೀರಿ ಎಂದು ಹೇಳಿ.`,
+      pa: `ਸਤ ਸ੍ਰੀ ਅਕਾਲ ${newSeller.name}! ਤੁਸੀਂ ਕੀ ਬਣਾਉਂਦੇ ਹੋ ਦੱਸੋ।`
+    };
+    setMessages([{ id: nextId(), from: 'ai', text: greetings[newSeller.seller_language] || greetings.hi }]);
   }
 
   async function handleSend(text) {
@@ -120,7 +131,7 @@ export default function SellerOnboardingPage() {
       <div className="onboarding-layout">
         <StageProgress stage={stage} />
         <div>
-          <ChatWindow messages={messages} onSend={handleSend} disabled={sending || stage === 'done'} />
+          <ChatWindow language={seller?.seller_language} messages={messages} onSend={handleSend} disabled={sending || stage === 'done'} />
           {sending && <div style={{ marginTop: '0.6rem' }}><LoadingSpinner label="AI is thinking…" /></div>}
           {sendError && (
             <div style={{ marginTop: '0.6rem' }}>

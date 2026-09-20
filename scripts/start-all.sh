@@ -19,6 +19,18 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "$ROOT_DIR/.env"
+    set +a
+else
+    set -a
+    # shellcheck disable=SC1091
+    . "$ROOT_DIR/.env.example"
+    set +a
+fi
+
 LOG_DIR="$ROOT_DIR/.logs"
 mkdir -p "$LOG_DIR"
 
@@ -57,7 +69,8 @@ fi
 
 echo "==> [4/6] starting Matching service (matching/)"
 if [ -d "$ROOT_DIR/matching" ]; then
-    MATCHING_PYTHON="$ROOT_DIR/matching/.venv/bin/python"
+    MATCHING_PYTHON="$ROOT_DIR/matching/venv/bin/python"
+    [ -x "$MATCHING_PYTHON" ] || MATCHING_PYTHON="$ROOT_DIR/matching/.venv/bin/python"
     [ -x "$MATCHING_PYTHON" ] || MATCHING_PYTHON="$(command -v python3 || true)"
     (cd "$ROOT_DIR/matching" && \
         [ -n "$MATCHING_PYTHON" ] && "$MATCHING_PYTHON" -m pip install -q -r requirements.txt && \
@@ -67,14 +80,16 @@ else
     echo "    matching/ not present yet — skipping"
 fi
 
-echo "==> [5/6] starting backend (sam local start-api)"
+echo "==> [5/6] starting backend"
 if [ -d "$ROOT_DIR/backend" ]; then
-    if command -v sam >/dev/null 2>&1; then
-        (cd "$ROOT_DIR/backend" && \
-            sam local start-api --env-vars ../.env.example >"$LOG_DIR/backend.log" 2>&1 &
-        ) || echo "    backend failed to start — check $LOG_DIR/backend.log"
+    BACKEND_PYTHON="$ROOT_DIR/backend/venv/bin/python"
+    [ -x "$BACKEND_PYTHON" ] || BACKEND_PYTHON="$ROOT_DIR/backend/.venv/bin/python"
+    if [ -x "$BACKEND_PYTHON" ]; then
+        (cd "$ROOT_DIR/backend" && PORT=3000 "$BACKEND_PYTHON" -m src.app >"$LOG_DIR/backend.log" 2>&1 &)
+    elif command -v sam >/dev/null 2>&1; then
+        (cd "$ROOT_DIR/backend" && sam local start-api --env-vars ../.env.example >"$LOG_DIR/backend.log" 2>&1 &)
     else
-        echo "    backend skipped — AWS SAM CLI is not installed"
+        echo "    backend skipped — create backend/venv or install AWS SAM CLI"
     fi
 else
     echo "    backend/ not present yet — skipping"

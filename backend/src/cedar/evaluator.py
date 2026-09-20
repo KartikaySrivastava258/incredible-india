@@ -56,6 +56,13 @@ class Request:
 # ---------------------------------------------------------------------------
 
 @dataclass
+class Decision:
+    allowed: bool
+    policy_file: str | None = None
+    reason: str | None = None
+
+
+@dataclass
 class LoadedPolicy:
     source_file: str
     effect: str                   # "permit" or "forbid"
@@ -311,43 +318,39 @@ def _compare(op: str, left: str, right: str, req: Request) -> bool:
     return False
 
 
-def is_authorized(req: Request) -> bool:
-    """
-    Cedar decision for a request.
-
-    Rules (matching Cedar):
-      - Default deny.
-      - A matching `forbid` always overrides any matching `permit`.
-      - Otherwise, if any matching `permit` applies, allow.
-    """
+def authorize(req: Request) -> Decision:
+    """Return the Cedar decision plus the matching policy/reason for diagnostics."""
     if _cedar_mode() == "engine":
-        return _is_authorized_engine(req)
-
+        raise RuntimeError(
+            "CEDAR_MODE=engine requested but no Cedar engine binary is wired in. "
+            "Set CEDAR_MODE=mock or integrate the real engine here."
+        )
     if not _LOADED:
-        log.warning("is_authorized called with no policies loaded — denying")
-        return False
+        log.warning("authorize called with no policies loaded — denying")
+        return Decision(False, reason="no policies loaded")
 
-    permits = 0
-    for p in _LOADED:
-        if not _policy_applies(p, req):
+    matched_permit = None
+    for policy in _LOADED:
+        if not _policy_applies(policy, req) or not _match_condition(policy.condition_text, req):
             continue
-        if not _match_condition(p.condition_text, req):
-            continue
-        if p.effect == "forbid":
-            log.info(
-                "DENY by %s on %s.%s (policy %s)",
-                p.effect, req.resource_type, req.action, os.path.basename(p.source_file),
-            )
-            return False
-        permits += 1
+        if policy.effect == "forbid":
+            reason = "matching forbid policy"
+            log.info("DENY by %s on %s.%s (policy %s)", policy.effect, req.resource_type, req.action, os.path.basename(policy.source_file))
+            return Decision(False, os.path.basename(policy.source_file), reason)
+        if matched_permit is None:
+            matched_permit = policy
 
-    allowed = permits > 0
-    log.info(
-        "%s %s.%s (permits matched: %d)",
-        "ALLOW" if allowed else "DENY",
-        req.resource_type, req.action, permits,
-    )
-    return allowed
+    if matched_permit:
+        log.info("ALLOW %s.%s (policy %s)", req.resource_type, req.action, os.path.basename(matched_permit.source_file))
+        return Decision(True, os.path.basename(matched_permit.source_file), "matching permit policy")
+
+    log.info("DENY %s.%s (no permit matched)", req.resource_type, req.action)
+    return Decision(False, reason="no permit policy matched")
+
+
+def is_authorized(req: Request) -> bool:
+    """Backward-compatible bool-only Cedar decision API."""
+    return authorize(req).allowed
 
 
 def _policy_applies(p: LoadedPolicy, req: Request) -> bool:

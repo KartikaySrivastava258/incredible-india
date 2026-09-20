@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import Badge from '../common/Badge';
 
 /**
@@ -8,6 +9,25 @@ import Badge from '../common/Badge';
  * Section F — no renamed keys.
  */
 export default function DraftListingReview({ listing }) {
+  const [qrSvg, setQrSvg] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!listing?.listing_id || typeof window === 'undefined') {
+      setQrSvg('');
+      return undefined;
+    }
+    const url = `${window.location.origin}/listings/${listing.listing_id}`;
+    QRCode.toString(url, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' })
+      .then((svg) => {
+        if (!cancelled) setQrSvg(svg);
+      })
+      .catch(() => {
+        if (!cancelled) setQrSvg('');
+      });
+    return () => { cancelled = true; };
+  }, [listing?.listing_id]);
+
   if (!listing) return null;
   return (
     <div className="card">
@@ -18,6 +38,13 @@ export default function DraftListingReview({ listing }) {
         </Badge>
       </div>
       <p className="price-tag">₹{listing.price_suggestion?.toLocaleString('en-IN')}</p>
+
+      {listing.listing_id && qrSvg && (
+        <div className="listing-qr" aria-label={`QR code for listing ${listing.listing_id}`}>
+          <div dangerouslySetInnerHTML={{ __html: qrSvg }} />
+          <p className="hint">Scan to open this listing</p>
+        </div>
+      )}
 
       <h3>Description (English)</h3>
       <p>{listing.description_en}</p>
