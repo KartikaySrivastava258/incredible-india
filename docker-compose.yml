@@ -1,0 +1,54 @@
+version: "3.8"
+
+# Kalaa Setu — local infra only.
+# Ollama runs on the host (`ollama serve`), not in this compose file.
+# AI / Matching / Backend / Frontend are started separately (see scripts/start-all.sh).
+
+services:
+  localstack:
+    image: localstack/localstack:3.4.0
+    container_name: kalaa-localstack
+    ports:
+      - "4566:4566"        # single LocalStack edge port (DynamoDB + S3 + everything)
+    environment:
+      - SERVICES=dynamodb,s3,lambda,apigateway
+      - DEBUG=0
+      - PERSISTENCE=0
+      - AWS_DEFAULT_REGION=us-east-1
+      - DYNAMODB_SHARDING_LIMIT=1
+    volumes:
+      - "./.localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "curl -s http://localhost:4566/_localstack/health | grep -q '\"dynamodb\"'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    container_name: kalaa-opensearch
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=KalaaSetu_Local_123!
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - "opensearch-data:/usr/share/opensearch/data"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  opensearch-data:
+    driver: local

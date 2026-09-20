@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Kalaa Setu — backend API (SAM local + LocalStack)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        AI_SERVICE_URL: !Ref AiServiceUrl
+        MATCHING_SERVICE_URL: !Ref MatchingServiceUrl
+        DYNAMODB_ENDPOINT: !Ref DynamoDbEndpoint
+        S3_ENDPOINT: !Ref S3Endpoint
+        CEDAR_POLICY_PATH: !Ref CedarPolicyPath
+        CEDAR_MODE: !Ref CedarMode
+        AWS_REGION: us-east-1
+
+Parameters:
+  AiServiceUrl:
+    Type: String
+    Default: http://localhost:8001
+  MatchingServiceUrl:
+    Type: String
+    Default: http://localhost:8002
+  DynamoDbEndpoint:
+    Type: String
+    Default: http://localhost:4566
+  S3Endpoint:
+    Type: String
+    Default: http://localhost:4566
+  CedarPolicyPath:
+    Type: String
+    Default: ./policies
+  CedarMode:
+    Type: String
+    Default: mock
+
+Resources:
+
+  # ---------------- Sellers ----------------
+  SellersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.sellers.lambda_handler
+      Events:
+        CreateSeller:
+          Type: Api
+          Properties:
+            Path: /sellers
+            Method: POST
+
+  # ---------------- Touchpoints ----------------
+  TouchpointsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.touchpoints.lambda_handler
+      Events:
+        CreateTouchpoint:
+          Type: Api
+          Properties:
+            Path: /touchpoints
+            Method: POST
+
+  # ---------------- Products ----------------
+  ProductsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.products.lambda_handler
+      Events:
+        CreateProduct:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: POST
+
+  # ---------------- Onboarding ----------------
+  OnboardingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.onboarding.lambda_handler
+      Events:
+        OnboardingMessage:
+          Type: Api
+          Properties:
+            Path: /onboarding/message
+            Method: POST
+
+  # ---------------- Listings (generate, review, get) ----------------
+  ListingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.listings.lambda_handler
+      Events:
+        GenerateListing:
+          Type: Api
+          Properties:
+            Path: /listings/generate
+            Method: POST
+        ReviewListing:
+          Type: Api
+          Properties:
+            Path: /listings/{id}/review
+            Method: POST
+        GetListing:
+          Type: Api
+          Properties:
+            Path: /listings/{id}
+            Method: GET
+
+  # ---------------- Search ----------------
+  SearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.search.lambda_handler
+      Events:
+        MatchSearch:
+          Type: Api
+          Properties:
+            Path: /search/match
+            Method: POST
+
+  # ---------------- Contributions ----------------
+  ContributionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.contributions.lambda_handler
+      Events:
+        SetContribution:
+          Type: Api
+          Properties:
+            Path: /contributions
+            Method: POST
+
+  # ---------------- Sales ----------------
+  SalesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.sales.lambda_handler
+      Events:
+        CreateSale:
+          Type: Api
+          Properties:
+            Path: /sales
+            Method: POST
+
+  # ---------------- Ledger ----------------
+  LedgerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.ledger.lambda_handler
+      Events:
+        GetLedger:
+          Type: Api
+          Properties:
+            Path: /ledger/{seller_id}
+            Method: GET
+
+  # ---------------- Impact ----------------
+  ImpactFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers.impact.lambda_handler
+      Events:
+        GetImpact:
+          Type: Api
+          Properties:
+            Path: /impact
+            Method: GET
+
+Outputs:
+  ApiBaseUrl:
+    Description: API Gateway base URL for the backend
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"

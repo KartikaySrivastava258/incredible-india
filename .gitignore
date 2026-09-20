@@ -1,0 +1,52 @@
+# Kalaa Setu — repo-wide ignore list
+
+# Secrets
+.env
+*.env
+!.env.example
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+ai/venv/
+matching/.venv/
+backend/.venv/
+
+# SAM
+.aws-sam/
+samconfig.toml
+
+# LocalStack
+.localstack/
+localstack-data/
+
+# OpenSearch
+opensearch-data/
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Logs
+*.log
+.logs/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,215 @@
+{
+  "_comment": "Sample data for the judge demo. Loaded through POST /index/listing by scripts/seed_opensearch.py, never written to OpenSearch directly. Shared with Dipanshu's DynamoDB seed script (same source listings, two separate loaders) per BRAIN.md Section E.",
+  "listings": [
+    {
+      "listing": {
+        "listing_id": "00166932-bb0e-489a-9625-59b3b96a7cbd",
+        "product_id": "5dcce8bf-31cc-46ed-ac71-f012e9d6cb62",
+        "category": "handicraft",
+        "listing_title": "Hand-Painted Blue Pottery Clay Showpiece",
+        "description_en": "A hand-shaped and hand-painted blue pottery showpiece, fired in a traditional kiln by an artisan family. Makes a striking centerpiece for a shelf or table.",
+        "price_suggestion": 650,
+        "photo_guidance": [
+          "shoot in daylight",
+          "show size next to a coin"
+        ],
+        "story": "Made by a third-generation potter family who learned the craft from their grandparents.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Pushkar",
+      "seller_state": "Rajasthan"
+    },
+    {
+      "listing": {
+        "listing_id": "a4a2ace3-c5f1-4891-8a71-91549befb836",
+        "product_id": "70a5f0fb-f547-4fe0-a14c-9e899ea60e08",
+        "category": "toy",
+        "listing_title": "Channapatna Lacquered Wooden Spinning Top Set",
+        "description_en": "A set of five hand-lacquered wooden spinning tops in bright natural dyes, made using the traditional Channapatna toy-turning technique. Safe, non-toxic finish for children.",
+        "price_suggestion": 349,
+        "photo_guidance": [
+          "lay all pieces out on plain cloth",
+          "one close-up of the lacquer sheen"
+        ],
+        "story": "Carved and lacquered by a family workshop in Channapatna, India's traditional toy town.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Channapatna",
+      "seller_state": "Karnataka"
+    },
+    {
+      "listing": {
+        "listing_id": "19250dde-b180-4672-99f6-d9ee4b0f898c",
+        "product_id": "744e2794-e4fb-4e49-952a-612d5fc3e5da",
+        "category": "handicraft",
+        "listing_title": "Dhokra Lost-Wax Brass Tribal Figurine",
+        "description_en": "A small brass figurine cast using the 4,000-year-old Dhokra lost-wax technique, showing a musician playing a traditional drum. Each piece is one-of-a-kind since the mould breaks during casting.",
+        "price_suggestion": 890,
+        "photo_guidance": [
+          "shoot against a plain dark background to show the brass detail"
+        ],
+        "story": "Cast by a tribal artisan cooperative that keeps the Dhokra technique alive.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Kondagaon",
+      "seller_state": "Chhattisgarh"
+    },
+    {
+      "listing": {
+        "listing_id": "93ece64b-57db-4e12-91ea-9b69925f6914",
+        "product_id": "73f3edc0-2987-4ed9-b7e1-6490a19484d5",
+        "category": "textile",
+        "listing_title": "Hand Tie-Dyed Bandhani Cotton Dupatta",
+        "description_en": "A lightweight cotton dupatta hand tie-dyed in the traditional Bandhani technique, in a red and yellow dot pattern. Each dot is tied and dyed by hand, a process taking several days.",
+        "price_suggestion": 780,
+        "photo_guidance": [
+          "hang against a plain wall",
+          "one shot showing the dot pattern up close"
+        ],
+        "story": "Tied and dyed by a women's self-help group that has practiced Bandhani for generations.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Bhuj",
+      "seller_state": "Gujarat"
+    },
+    {
+      "listing": {
+        "listing_id": "6e7a96e6-6753-4883-a69f-e95d9333660e",
+        "product_id": "8be0f8f8-4881-4681-9ff5-f9297ebc0ac3",
+        "category": "textile",
+        "listing_title": "Handwoven Kashmiri Pashmina Shawl",
+        "description_en": "A soft, warm pashmina shawl handwoven on a traditional pit loom from fine goat-wool yarn, in a plain natural cream shade with a hand-embroidered border.",
+        "price_suggestion": 3200,
+        "photo_guidance": [
+          "drape over a chair to show the full length and drape"
+        ],
+        "story": "Woven by a family of weavers who have worked pashmina looms for over thirty years.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Srinagar",
+      "seller_state": "Jammu and Kashmir"
+    },
+    {
+      "listing": {
+        "listing_id": "aacfe079-a1f9-4766-9d9a-b113889a8296",
+        "product_id": "7902b492-9dce-48ba-a1c8-85737207693f",
+        "category": "food",
+        "listing_title": "Sun-Dried Rajasthani Moong Papad (Pack of 20)",
+        "description_en": "Thin, crisp moong-dal papad, hand-rolled and sun-dried the traditional way with no preservatives. Roast or fry lightly before serving.",
+        "price_suggestion": 180,
+        "photo_guidance": [
+          "shoot the stack of papad on a plain plate in daylight"
+        ],
+        "story": "Rolled and dried by hand each summer by women in the village, a seasonal household tradition.",
+        "compliance_flags": [
+          "contains_no_preservatives_claim_verify"
+        ],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Bikaner",
+      "seller_state": "Rajasthan"
+    },
+    {
+      "listing": {
+        "listing_id": "7f332de6-febe-4618-a3b1-f9d1c2cbbbd2",
+        "product_id": "8c9143e0-2a35-41bd-9be7-5586503ffa2e",
+        "category": "food",
+        "listing_title": "Homestyle Raw Mango Pickle in Mustard Oil",
+        "description_en": "Tangy, spicy raw mango pickle made in small batches with mustard oil and a traditional spice blend, matured in sunlight in the classic village style.",
+        "price_suggestion": 220,
+        "photo_guidance": [
+          "shoot the jar with the lid open to show the pickle texture"
+        ],
+        "story": "Made using a recipe passed down through three generations of the seller's family.",
+        "compliance_flags": [
+          "shelf_life_label_required"
+        ],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Bareilly",
+      "seller_state": "Uttar Pradesh"
+    },
+    {
+      "listing": {
+        "listing_id": "1f1db2b1-86df-460c-84ab-59b232e17e12",
+        "product_id": "282dc1d2-ce0e-40cd-aa3a-f1ccc8039d43",
+        "category": "handicraft",
+        "listing_title": "Hand-Painted Madhubani Fish Motif Wall Art",
+        "description_en": "A hand-painted Madhubani artwork on handmade paper, showing a traditional fish motif in natural pigments, symbolising fertility and good fortune. Ready to frame.",
+        "price_suggestion": 1200,
+        "photo_guidance": [
+          "shoot flat under even light, no glare"
+        ],
+        "story": "Painted by a woman artist trained in the Madhubani style since childhood.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Madhubani",
+      "seller_state": "Bihar"
+    },
+    {
+      "listing": {
+        "listing_id": "d7a256d7-0c79-4fd0-b878-d15d6cdfee64",
+        "product_id": "472450a6-5e0b-4d69-a385-56de55fbdd6e",
+        "category": "toy",
+        "listing_title": "Handstitched Cotton Rag Doll in Rajasthani Dress",
+        "description_en": "A soft, handstitched cotton rag doll dressed in a miniature traditional Rajasthani ghagra-choli with mirror-work embroidery. Filled with natural cotton wadding.",
+        "price_suggestion": 299,
+        "photo_guidance": [
+          "shoot standing upright against a plain background"
+        ],
+        "story": "Stitched by a women's craft collective as an income project alongside farming work.",
+        "compliance_flags": [
+          "small_parts_choking_hazard_check"
+        ],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Jodhpur",
+      "seller_state": "Rajasthan"
+    },
+    {
+      "listing": {
+        "listing_id": "34c02822-2e7a-4a94-9ae2-061917998ccf",
+        "product_id": "3010e7e2-1031-4ac5-9bf5-28e9fe703568",
+        "category": "textile",
+        "listing_title": "Hand Block-Printed Cotton Saree",
+        "description_en": "A lightweight cotton saree hand block-printed with a floral indigo motif using hand-carved wooden blocks and natural dye, finished with a plain woven border.",
+        "price_suggestion": 1450,
+        "photo_guidance": [
+          "hang the full saree to show the repeat pattern",
+          "one close-up of the block print detail"
+        ],
+        "story": "Printed by a family workshop using wooden blocks carved by the same family for over forty years.",
+        "compliance_flags": [],
+        "review_status": "approved",
+        "created_at": "2026-09-14T10:00:00Z"
+      },
+      "seller_village": "Bagru",
+      "seller_state": "Rajasthan"
+    }
+  ],
+  "demo_queries": [
+    "handmade clay showpiece for home decor",
+    "authentic Rajasthani pickle",
+    "safe wooden toys for toddlers",
+    "handwoven pashmina shawl gift",
+    "traditional tribal brass figurine",
+    "block print cotton saree",
+    "sun dried papad no preservatives",
+    "Madhubani painting wall art"
+  ]
+}
