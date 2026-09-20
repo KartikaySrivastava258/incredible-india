@@ -260,13 +260,14 @@ GitHub: https://github.com/Dipanshu0001-OP
 - UI integration with backend APIs
 - Usability and presentation improvements
 
-GitHub: https://github.com/revv-a
+GitHub: https://github.com/salonibatra0024-coderXY
 
 ### Saloni Sharma
 - Frontend and product-flow support
 - UI testing and integration
 - Documentation and presentation support
 - Demo-flow validation
+Github: https://github.com/revv-a
 
 ---
 
